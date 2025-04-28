@@ -1,0 +1,7 @@
+{
+    "self_connector_port" : 15973,
+    "other_connector_ip" : "127.0.0.1",
+    "other_connector_port" : 15974,
+    "recieve_buffer_size" : 5,
+    "send_buffer_size" : 5
+}
