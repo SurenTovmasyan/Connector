@@ -2,7 +2,7 @@
 
 // @TODO: add 3 classes - Socket, ConfigLoader, Codec
 // 1. Socket - creates socket and closses automaticly
-// 2. ConfigLoader - loads and configurates config.jsom, may work with JSON, YAML, XML
+// 2. ConfigLoader - loads and configurates config.json, may work with JSON, YAML, XML
 // 3. Codec - codes and decodes given string
 
 constexpr const int END_OF_CODE = 127;
@@ -127,19 +127,12 @@ Connector::Connector():
     _server_socket_fd(-1),
     _client_socket_fd(-1),
     _socket_fd(-1),
-    _config()
+    _config("../config.json")
 {
-    std::ifstream fin_("../config.json");
-    
-    if(!fin_.is_open()){
-        throw std::runtime_error("Wrong path to config.json or just deleted");
-    }
-
-    fin_ >> _config;
     std::cout << "Loading config" << std::endl;
 
-    _send_buffer_size = _config["send_buffer_size"];
-    _recv_buffer_size = _config["recieve_buffer_size"];
+    _send_buffer_size = _config.get_config()["send_buffer_size"];
+    _recv_buffer_size = _config.get_config()["recieve_buffer_size"];
     
     connect();
 }
@@ -175,7 +168,7 @@ void Connector::_create_server_socket(){
     sockaddr_in addr_{};
 
     addr_.sin_family = AF_INET;
-    addr_.sin_port = htons(_config["self_connector_port"]);
+    addr_.sin_port = htons(_config.get_config()["self_connector_port"]);
     addr_.sin_addr.s_addr = INADDR_ANY;
 
     std::cout << "[SERVER] Binding and listening" << std::endl;
@@ -227,9 +220,9 @@ void Connector::_create_client_socket(){
     std::cout << "[CLIENT] Configurating other side's ip and port" << std::endl;
     sockaddr_in peer_addr_{};
     peer_addr_.sin_family = AF_INET;
-    peer_addr_.sin_port = htons(_config["other_connector_port"]);
+    peer_addr_.sin_port = htons(_config.get_config()["other_connector_port"]);
 
-    inet_pton(AF_INET, ((std::string)(_config["other_connector_ip"])).c_str(), &peer_addr_.sin_addr);
+    inet_pton(AF_INET, ((std::string)(_config.get_config()["other_connector_ip"])).c_str(), &peer_addr_.sin_addr);
 
     while(!_is_connected){
         std::cout << "[CLIENT] Trying to connect to the other side" << std::endl;

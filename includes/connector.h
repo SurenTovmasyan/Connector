@@ -17,6 +17,8 @@
 #include <vector>
 #include <iostream>
 
+#include "config_loader.h"
+
 class Connector
 {
 public:
@@ -53,7 +55,7 @@ private:
     int _client_socket_fd;
     int _socket_fd;
 
-    nlohmann::json _config;
+    Config_Loader _config;
 
     Connector();
 
