@@ -6,6 +6,7 @@
 #include <nlohmann/json.hpp>
 
 // @TODO: Add implementation of reading YAML and XML files too, make it using std::variant
+// Add implementation of pattern Singleton
 
 class Config_Loader
 {

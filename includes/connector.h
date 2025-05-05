@@ -18,6 +18,8 @@
 #include <iostream>
 
 #include "config_loader.h"
+#include "server_socket.h"
+#include "client_socket.h"
 
 class Connector
 {
@@ -31,8 +33,6 @@ public:
 
     void connect();
     void disconnect();
-
-    bool is_connected() const noexcept;
 
     bool set_message(Message&) noexcept;
 
@@ -49,26 +49,20 @@ private:
     std::deque<Message> _sbuffer;
     int _send_buffer_size;
 
-    std::atomic<bool> _is_connected;
-
-    int _server_socket_fd;
-    int _client_socket_fd;
-    int _socket_fd;
+    Server_Socket _recv_socket;
+    Client_Socket _send_socket;
 
     Config_Loader _config;
 
     Connector();
 
     Connector(const Connector&) = delete;
+    Connector(Connector&&) = delete;
     Connector& operator=(const Connector&) = delete;
     Connector& operator=(Connector&&) = delete;
 
     void _recv_update();
     void _send_update();
-
-    void _create_server_socket();
-    void _create_client_socket();
-    void _close_sockets();
 
     void _recv_message();
     void _send_message();

@@ -23,4 +23,4 @@ target_link_libraries(connector PRIVATE nlohmann_json::nlohmann_json spdlog::spd
 find_package(nlohmann_json REQUIRED)
 find_package(spdlog REQUIRED)
 
-# add_executable(main ${PROJECT_SOURCES} example.cpp)
+#add_executable(main ${PROJECT_SOURCES} example.cpp)

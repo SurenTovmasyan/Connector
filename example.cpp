@@ -13,9 +13,9 @@ using namespace std;
 int main(){
     std::shared_ptr<Connector> pc = Connector::get_instance();
 
-    Connector::Message msg_ = {125, "Taug taug taug SAHUR!!!"};
+    this_thread::sleep_for(chrono::seconds(5));
 
-    pc->set_message(msg_);
+    Connector::Message msg_ = pc->get_message();
 
     this_thread::sleep_for(chrono::seconds(30));
     return 0;
