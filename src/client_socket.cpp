@@ -1,4 +1,4 @@
-#include "../includes/client_socket.h"
+#include "../include/client_socket.h"
 
 constexpr const int SOCKET_TIMEOUT_MS = 250; // 250ms
 

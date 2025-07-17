@@ -1,4 +1,4 @@
-#include "../includes/connector.h"
+#include "../include/connector.h"
 
 // @TODO: add 3 classes - Socket, ConfigLoader, Codec
 // 3. Codec - codes and decodes given string
