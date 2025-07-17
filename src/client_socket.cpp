@@ -10,7 +10,6 @@ Client_Socket::Client_Socket(const std::string& file_path_):
     
     _peer_addr.sin_family = AF_INET;
     _peer_addr.sin_port = htons(_config.get_config()["other_connector_port"]);
-
 }
 
 Client_Socket::~Client_Socket(){
