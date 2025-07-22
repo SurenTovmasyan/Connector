@@ -28,7 +28,7 @@ add_library(connector_recv STATIC ${RECV_SOURCES})
 target_compile_definitions(connector_recv PUBLIC RECV)
 target_include_directories(connector_recv PUBLIC include)
 target_link_libraries(connector_recv 
-    PRIVATE 
+    PUBLIC 
         nlohmann_json::nlohmann_json 
         spdlog::spdlog
         config_loader
@@ -38,7 +38,7 @@ add_library(connector_send STATIC ${SEND_SOURCES})
 target_compile_definitions(connector_send PUBLIC SEND)
 target_include_directories(connector_send PUBLIC include)
 target_link_libraries(connector_send 
-    PRIVATE 
+    PUBLIC 
         nlohmann_json::nlohmann_json 
         spdlog::spdlog
         config_loader

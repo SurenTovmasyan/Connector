@@ -10,7 +10,7 @@
 #include <iostream>
 #include <thread>
 
-#include "../config_loader/include/config_loader.h"
+#include "../config_loader/config_loader.hpp"
 
 // @TODO: create socket manager, which will connect and disconnect to the remote module of mine
 // create 2 socket classes - Server_Socket and Client_Socket, each will try connect as it should
