@@ -6,11 +6,10 @@ constexpr const int SOCKET_TIMEOUT_CYCLES = 50; // 50 * 100ms = 5s
 
 Connector::Connector():
 #ifdef RECV
-    _recv_socket("../config.json"),
+    _recv_socket("../config.json")
 #else
-    _send_socket("../config.json"),
+    _send_socket("../config.json")
 #endif
-    _config("../config.json")
 {
     connect();
 }

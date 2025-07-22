@@ -10,7 +10,7 @@
 #include <iostream>
 #include <thread>
 
-#include "config_loader.h"
+#include "../config_loader/include/config_loader.h"
 
 // @TODO: create socket manager, which will connect and disconnect to the remote module of mine
 // create 2 socket classes - Server_Socket and Client_Socket, each will try connect as it should
@@ -40,5 +40,5 @@ protected:
     std::atomic<bool> _is_connected;
     std::atomic<bool> _is_thread_working;
     
-    Config_Loader _config;
+    Config_Loader<Config_Type::JSON> _config;
 };

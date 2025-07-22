@@ -7,10 +7,11 @@ set(CMAKE_PREFIX_PATH "/usr/local/lib/cmake" ${CMAKE_PREFIX_PATH})
 find_package(nlohmann_json REQUIRED)
 find_package(spdlog REQUIRED)
 
+add_subdirectory(config_loader)
+
 set(GLOBAL_SOURCES 
     src/socket.cpp
     src/connector.cpp
-    src/config_loader.cpp
 )
 
 set(RECV_SOURCES 
@@ -30,6 +31,7 @@ target_link_libraries(connector_recv
     PRIVATE 
         nlohmann_json::nlohmann_json 
         spdlog::spdlog
+        config_loader
 )
 
 add_library(connector_send STATIC ${SEND_SOURCES})
@@ -39,6 +41,7 @@ target_link_libraries(connector_send
     PRIVATE 
         nlohmann_json::nlohmann_json 
         spdlog::spdlog
+        config_loader
 )
 
 #add_executable(exm1 tests/example1.cpp)

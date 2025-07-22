@@ -16,7 +16,6 @@
 #include <vector>
 #include <iostream>
 
-#include "config_loader.h"
 #ifdef RECV
 #include "recv_socket.h"
 #else
@@ -45,9 +44,6 @@ private:
 #else
     Send_Socket _send_socket;
 #endif
-
-    Config_Loader _config;
-
     Connector(const Connector&) = delete;
     Connector(Connector&&) = delete;
     Connector& operator=(const Connector&) = delete;
