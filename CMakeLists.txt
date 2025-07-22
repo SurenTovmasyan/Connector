@@ -41,14 +41,14 @@ target_link_libraries(connector_send
         spdlog::spdlog
 )
 
-add_executable(exm1 example1.cpp)
-target_link_libraries(exm1 
-    PRIVATE 
-        connector_send
-)
+#add_executable(exm1 tests/example1.cpp)
+#target_link_libraries(exm1 
+#    PRIVATE 
+#        connector_send
+#)
 
-add_executable(exm2 example2.cpp)
-target_link_libraries(exm2 
-    PRIVATE 
-        connector_recv
-)
+#add_executable(exm2 tests/example2.cpp)
+#target_link_libraries(exm2 
+#    PRIVATE 
+#        connector_recv
+#)
