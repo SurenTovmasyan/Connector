@@ -40,13 +40,13 @@ void Connector::connect(){
     if(!_send_socket.is_connected()){
         _send_socket.disconnect();
 #endif
-        std::cout << "Timeout worked, couldn't connect" << std::endl;
+        std::cout << "[CONNECTOR] Timeout worked, couldn't connect" << std::endl;
         return;
     }
 }
 
 void Connector::disconnect(){
-    std::cout << "Disconnecting" << std::endl;
+    std::cout << "[CONNECTOR] Disconnecting" << std::endl;
 
 #ifdef RECV
     _recv_socket.disconnect();
@@ -60,7 +60,7 @@ void Connector::disconnect(){
 #ifdef RECV
 std::string Connector::recv_message(){
     if(!_recv_socket.is_connected())
-        throw std::runtime_error("No connection");
+        throw std::runtime_error("[CONNECTOR] No connection");
 
     char buffer_recv_[BUFFER_SIZE] = {0};
 
@@ -70,14 +70,14 @@ std::string Connector::recv_message(){
 
     setsockopt(_recv_socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout_, sizeof(timeout_));
 
-    std::cout << "Recieving message" << std::endl;
+    std::cout << "[CONNECTOR] Recieving message" << std::endl;
     int recv_res_ = recv(_recv_socket, buffer_recv_, sizeof(buffer_recv_), 0);
 
     if(recv_res_ >= 0){
         std::string msg_ = buffer_recv_;
         
         if(msg_ == "EOC"){
-            std::cout << "Disconnecting" << std::endl;
+            std::cout << "[CONNECTOR] Disconnecting" << std::endl;
 
             disconnect();
         }
@@ -90,9 +90,9 @@ std::string Connector::recv_message(){
 #else
 void Connector::send_message(const std::string& msg_){
     if(!_send_socket.is_connected())
-        throw std::runtime_error("No connection");
+        throw std::runtime_error("[CONNECTOR] No connection");
 
-    std::cout << "Sending message " << msg_.length() << ' ' << msg_ << std::endl;
+    std::cout << "[CONNECTOR] Sending message: "<< msg_ << std::endl;
     send(_send_socket, msg_.c_str(), msg_.length(), 0);
 }
 #endif
