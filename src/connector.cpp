@@ -59,6 +59,9 @@ void Connector::disconnect(){
 
 #ifdef RECV
 std::string Connector::recv_message(){
+    if(!_recv_socket.is_connected())
+        throw std::runtime_error("No connection");
+
     char buffer_recv_[BUFFER_SIZE] = {0};
 
     timeval timeout_;
@@ -86,13 +89,11 @@ std::string Connector::recv_message(){
 }
 #else
 void Connector::send_message(const std::string& msg_){
-    char buffer_send_[BUFFER_SIZE];
+    if(!_send_socket.is_connected())
+        throw std::runtime_error("No connection");
 
-    std::cout << "Copying encoded message into buffer" << std::endl;
-    std::strcpy(buffer_send_, msg_.c_str());
-
-    std::cout << "Sending message " << msg_.length() << ' ' << buffer_send_ << std::endl;
-    send(_send_socket, buffer_send_, msg_.length(), 0);
+    std::cout << "Sending message " << msg_.length() << ' ' << msg_ << std::endl;
+    send(_send_socket, msg_.c_str(), msg_.length(), 0);
 }
 #endif
 

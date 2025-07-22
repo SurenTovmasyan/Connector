@@ -18,14 +18,16 @@
 
 #include "config_loader.h"
 #ifdef RECV
-#include "server_socket.h"
+#include "recv_socket.h"
 #else
-#include "client_socket.h"
+#include "send_socket.h"
 #endif
 
 class Connector
 {
 public:
+    explicit Connector();
+
     void connect();
     void disconnect();
 
@@ -39,14 +41,12 @@ public:
     
 private:
 #ifdef RECV
-    Server_Socket _recv_socket;
+    Recv_Socket _recv_socket;
 #else
-    Client_Socket _send_socket;
+    Send_Socket _send_socket;
 #endif
 
     Config_Loader _config;
-
-    Connector();
 
     Connector(const Connector&) = delete;
     Connector(Connector&&) = delete;

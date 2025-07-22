@@ -2,6 +2,8 @@
 
 Socket::Socket(const std::string& file_path_):
     _socket_fd(-1),
+    _is_connected(0),
+    _is_thread_working(0),
     _config(file_path_)
 {}
 
