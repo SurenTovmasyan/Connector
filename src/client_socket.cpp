@@ -1,8 +1,8 @@
-#include "../include/send_socket.h"
+#include "../include/client_socket.h"
 
 constexpr const int SOCKET_TIMEOUT_MS = 250; // 250ms
 
-Send_Socket::Send_Socket(const std::string& other_side_ip_, int other_side_port_):
+Client_Socket::Client_Socket(const std::string& other_side_ip_, int other_side_port_):
     _peer_addr(),
     _other_side_ip(other_side_ip_)
 {
@@ -12,11 +12,11 @@ Send_Socket::Send_Socket(const std::string& other_side_ip_, int other_side_port_
     _peer_addr.sin_port = htons(other_side_port_);
 }
 
-Send_Socket::~Send_Socket(){
+Client_Socket::~Client_Socket(){
     disconnect();
 }
 
-void Send_Socket::connect() {
+void Client_Socket::connect() {
     std::cout << "[SENDER] " << _is_connected << ' ' << _is_thread_working << std::endl;
     if (_is_connected || _is_thread_working)
         return;
@@ -26,7 +26,7 @@ void Send_Socket::connect() {
     sender_thread_.detach();
 }
 
-void Send_Socket::disconnect(){
+void Client_Socket::disconnect(){
     if(_is_thread_working)
         _is_thread_working = false;
 
@@ -39,7 +39,7 @@ void Send_Socket::disconnect(){
     close(_socket_fd);
 }
 
-void Send_Socket::_connect() {
+void Client_Socket::_connect() {
     _is_thread_working = true;
 
     std::cout << "[SENDER] Waiting some time before connecting other side" << std::endl;

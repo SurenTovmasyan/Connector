@@ -10,15 +10,16 @@
 #include <iostream>
 #include <thread>
 
-// @TODO: create socket manager, which will connect and disconnect to the remote module of mine
-// create 2 socket classes - Server_Socket and Client_Socket, each will try connect as it should
-// Manager will manage them, stop the threads they have created and take the gotten socket
-
 class Socket
 {
 public:
-    explicit Socket();
-    virtual ~Socket();
+    enum Socket_Type{
+        SERVER,
+        CLIENT
+    };
+
+    explicit Socket(Socket_Type, int, const std::string&, int);
+    ~Socket();
 
     Socket(const Socket&) = delete;
     Socket(Socket&&) = delete;
@@ -27,14 +28,23 @@ public:
 
     operator int() const;
 
-    virtual void connect()    = 0;
-    virtual void disconnect() = 0;
+    void connect();
+    void disconnect();
 
     bool is_connected() const { return _is_connected; };
 
 protected:
     int _socket_fd;
+    Socket_Type _type;
 
     std::atomic<bool> _is_connected;
     std::atomic<bool> _is_thread_working;
+
+    int _self_port;
+
+    std::string _other_ip;
+    int _other_port;
+
+    void _server_connect();
+    void _client_connect();
 };

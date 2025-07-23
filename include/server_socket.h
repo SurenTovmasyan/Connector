@@ -2,11 +2,11 @@
 
 #include "socket.h"
 
-class Recv_Socket: public Socket
+class Server_Socket: public Socket
 {
 public:
-    Recv_Socket(int);
-    ~Recv_Socket();
+    Server_Socket(int);
+    ~Server_Socket();
 
     void connect();
     void disconnect();

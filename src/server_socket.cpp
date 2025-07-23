@@ -1,8 +1,8 @@
-#include "../include/recv_socket.h"
+#include "../include/server_socket.h"
 
 constexpr const int SOCKET_TIMEOUT_US = 500 * 1000; // 500ms
 
-Recv_Socket::Recv_Socket(int self_port_):
+Server_Socket::Server_Socket(int self_port_):
     _addr(),
     _timeout()
 {
@@ -14,11 +14,11 @@ Recv_Socket::Recv_Socket(int self_port_):
 }
 
 
-Recv_Socket::~Recv_Socket(){
+Server_Socket::~Server_Socket(){
     disconnect();
 }
 
-void Recv_Socket::connect() {
+void Server_Socket::connect() {
     std::cout << "[RECEIVER] " << _is_connected << ' ' << _is_thread_working << std::endl;
 
     if (_is_connected || _is_thread_working)
@@ -29,7 +29,7 @@ void Recv_Socket::connect() {
     receiver_thread_.detach();
 }
 
-void Recv_Socket::disconnect(){
+void Server_Socket::disconnect(){
     if(_is_thread_working)
         _is_thread_working = false;
 
@@ -42,7 +42,7 @@ void Recv_Socket::disconnect(){
     close(_socket_fd);
 }
 
-void Recv_Socket::_connect(){
+void Server_Socket::_connect(){
     _is_thread_working = true;
 
     std::cout << "[RECEIVER] Getting listening socket's file descriptor" << std::endl;
