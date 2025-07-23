@@ -9,7 +9,6 @@
 #include <nlohmann/json.hpp>
 #include <deque>
 #include <string>
-#include <memory>
 #include <fstream>
 #include <atomic>
 #include <thread>
@@ -17,9 +16,8 @@
 #include <vector>
 #include <iostream>
 
-#include "config_loader.h"
-#include "server_socket.h"
-#include "client_socket.h"
+#include "recv_socket.h"
+#include "send_socket.h"
 
 class Connector
 {
@@ -29,40 +27,35 @@ public:
         std::string message;
     };
 
-    static std::shared_ptr<Connector> get_instance();
-
     void connect();
     void disconnect();
 
-    bool set_message(Message&) noexcept;
+    bool set_message(Message&&) noexcept;
 
     Message get_message();
     Message get_message(uint8_t);
 
+    int available() const noexcept;
+
+    Connector(int, int, int, const std::string&, int);
     ~Connector();
     
 private:
-    static std::shared_ptr<Connector> _singleton;
-
     std::deque<Message> _rbuffer;
     int _recv_buffer_size;
     std::deque<Message> _sbuffer;
     int _send_buffer_size;
 
-    Server_Socket _recv_socket;
-    Client_Socket _send_socket;
-
-    Config_Loader _config;
-
-    Connector();
+    Recv_Socket _recv_socket;
+    Send_Socket _send_socket;
 
     Connector(const Connector&) = delete;
     Connector(Connector&&) = delete;
     Connector& operator=(const Connector&) = delete;
     Connector& operator=(Connector&&) = delete;
 
-    void _recv_update();
-    void _send_update();
+    std::thread _thr;
+    void _update();
 
     void _recv_message();
     void _send_message();

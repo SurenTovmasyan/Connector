@@ -4,7 +4,6 @@ project(Connector)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_PREFIX_PATH "/usr/local/lib/cmake" ${CMAKE_PREFIX_PATH})
 
-find_package(nlohmann_json REQUIRED)
 find_package(spdlog REQUIRED)
 
 file(GLOB PROJECT_SOURCES src/*)
@@ -15,6 +14,8 @@ target_include_directories(connector PUBLIC include)
 
 target_link_libraries(connector 
     PRIVATE 
-        nlohmann_json::nlohmann_json 
         spdlog::spdlog
 )
+
+add_executable(exm1 tests/example1.cpp)
+target_link_libraries(exm1 PRIVATE connector)

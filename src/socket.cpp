@@ -1,8 +1,9 @@
 #include "../include/socket.h"
 
-Socket::Socket(const std::string& file_path_):
+Socket::Socket():
     _socket_fd(-1),
-    _config(file_path_)
+    _is_connected(false),
+    _is_thread_working(false)
 {}
 
 Socket::~Socket() {}

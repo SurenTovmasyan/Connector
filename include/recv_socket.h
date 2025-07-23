@@ -2,11 +2,11 @@
 
 #include "socket.h"
 
-class Server_Socket: public Socket
+class Recv_Socket: public Socket
 {
 public:
-    Server_Socket(const std::string&);
-    ~Server_Socket();
+    Recv_Socket(int);
+    ~Recv_Socket();
 
     void connect();
     void disconnect();

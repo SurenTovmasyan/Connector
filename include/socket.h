@@ -10,8 +10,6 @@
 #include <iostream>
 #include <thread>
 
-#include "config_loader.h"
-
 // @TODO: create socket manager, which will connect and disconnect to the remote module of mine
 // create 2 socket classes - Server_Socket and Client_Socket, each will try connect as it should
 // Manager will manage them, stop the threads they have created and take the gotten socket
@@ -19,7 +17,7 @@
 class Socket
 {
 public:
-    explicit Socket(const std::string&);
+    explicit Socket();
     virtual ~Socket();
 
     Socket(const Socket&) = delete;
@@ -39,6 +37,4 @@ protected:
 
     std::atomic<bool> _is_connected;
     std::atomic<bool> _is_thread_working;
-    
-    Config_Loader _config;
 };

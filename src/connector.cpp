@@ -3,29 +3,20 @@
 // @TODO: add 3 classes - Socket, ConfigLoader, Codec
 // 3. Codec - codes and decodes given string
 
+#ifdef Codec
 constexpr const int END_OF_CODE = 127;
 constexpr const int END_OF_INDEX = 126;
 constexpr const int END_OF_ID = '>';
+#endif
+
 constexpr const int LENGTH_OF_MSG = 125;
 constexpr const int BUFFER_SIZE = 4096;
 constexpr const int THREAD_SLEEP_MS = 25;
 constexpr const int SOCKET_TIMEOUT_US = 50 * 1000; // 50ms
 constexpr const int SOCKET_TIMEOUT_CYCLES = 50; // 50 * 100ms = 5s
 
-std::shared_ptr<Connector> Connector::_singleton;
-
-std::shared_ptr<Connector> Connector::get_instance(){
-    if(!_singleton.get()){
-       _singleton.reset(new Connector());
-    }
-
-    std::cout << "Returning instance" << std::endl;
-
-    return _singleton; 
-}
-
 void Connector::connect(){
-    std::cout << "Trying to connect" << std::endl;
+    std::cout << "[CONNECTOR] Trying to connect" << std::endl;
 
     _recv_socket.connect();
     _send_socket.connect();
@@ -41,25 +32,22 @@ void Connector::connect(){
     if(!_recv_socket.is_connected() || !_send_socket.is_connected()){
         _recv_socket.disconnect();
         _send_socket.disconnect();
-        std::cout << "Timeout worked, couldn't connect" << std::endl;
+        std::cout << "[CONNECTOR] Timeout worked, couldn't connect" << std::endl;
         return;
     }
 
-    std::cout << "Creating recv and send threads" << std::endl;
-    std::thread recv_thread_([&]() { _recv_update(); });
-    std::thread send_thread_([&]() { _send_update(); });
-
-    recv_thread_.detach();
-    send_thread_.detach();
+    std::cout << "[CONNECTOR] Creating working thread" << std::endl;
+    _thr = std::thread([&]() { _update(); });
 }
 
 void Connector::disconnect(){
-    std::cout << "Disconnecting" << std::endl;
+    std::cout << "[CONNECTOR] Disconnecting" << std::endl;
 
     Message msg_ = {0, "EOC"};
-    set_message(msg_);
+    set_message(std::move(msg_));
+    int cycle_counter_ = SOCKET_TIMEOUT_CYCLES;
     
-    while(_sbuffer.size() != 0){
+    while(_sbuffer.size() != 0 && cycle_counter_-- > 0){
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
@@ -67,42 +55,42 @@ void Connector::disconnect(){
     _send_socket.disconnect();
 }
 
-bool Connector::set_message(Connector::Message& msg_) noexcept{
+bool Connector::set_message(Connector::Message&& msg_) noexcept{
     if(_sbuffer.size() == _send_buffer_size)
         return false;
     
-    std::cout << "Adding msg_ to the _sbuffer" << std::endl;
+    std::cout << "[CONNECTOR] Adding msg_ to the _sbuffer" << std::endl;
     _sbuffer.push_back(msg_);
     return true;
 }
 
 Connector::Message Connector::get_message(){
     if(_rbuffer.size() == 0)
-        throw std::runtime_error("Recieve buffer is empty");
+        return {0, ""};
 
-    std::cout << "Getting _rbuffer.front()" << std::endl;
+    std::cout << "[CONNECTOR] Getting _rbuffer.front()" << std::endl;
     Connector::Message res_ = _rbuffer.front();
     while(res_.id == 0){
-        std::cout << "Checking msg_.id" << std::endl;
+        std::cout << "[CONNECTOR] Checking msg_.id" << std::endl;
         _rbuffer.pop_front();
         res_ = _rbuffer.front();    
     }
 
-    std::cout << "Deleting and returning msg_" << std::endl;
+    std::cout << "[CONNECTOR] Deleting and returning msg_" << std::endl;
     _rbuffer.pop_front();
     return res_;
 }
 
 Connector::Message Connector::get_message(uint8_t id){
     if(_rbuffer.size() == 0)
-        throw std::runtime_error("Recieve buffer is empty");
+        return {0, ""};
 
     Message res_ = {0,""};
 
-    std::cout << "Looking for the msg_ with ID " << id << std::endl;
+    std::cout << "[CONNECTOR] Looking for the msg_ with ID " << id << std::endl;
     for (Message& msg_ : _rbuffer){
         if(msg_.id == id){
-            std::cout << "Found(setting {0,\"\"})" << std::endl;
+            std::cout << "[CONNECTOR] Found(setting {0,\"\"})" << std::endl;
             res_ = msg_;
             msg_ = {0,""};
             return res_;
@@ -112,40 +100,31 @@ Connector::Message Connector::get_message(uint8_t id){
     return res_;
 }
 
+int Connector::available() const noexcept{
+    return _rbuffer.size();
+}
+
 Connector::~Connector(){
     disconnect();
 }
 
-Connector::Connector():
+Connector::Connector(int recv_buf_size_, int send_buf_size_, 
+        int self_port_, const std::string& other_ip_, int other_port_):
     _rbuffer(),
-    _recv_buffer_size(0),
+    _recv_buffer_size(recv_buf_size_),
     _sbuffer(),
-    _send_buffer_size(0),
-    _recv_socket("../config.json"),
-    _send_socket("../config.json"),
-    _config("../config.json")
-{
-    std::cout << "Loading config" << std::endl;
-
-    _send_buffer_size = _config.get_config()["send_buffer_size"];
-    _recv_buffer_size = _config.get_config()["recieve_buffer_size"];
-    
+    _send_buffer_size(send_buf_size_),
+    _recv_socket(self_port_),
+    _send_socket(other_ip_, other_port_)
+{    
     connect();
 }
 
-void Connector::_recv_update(){
-    std::cout << "Starting recv thread" << std::endl;
-    while (_recv_socket.is_connected()){
-        std::this_thread::sleep_for(std::chrono::milliseconds(THREAD_SLEEP_MS));
-        _recv_message();
-    }
-}
-
-void Connector::_send_update(){
-    std::cout << "Starting send thread" << std::endl;
-    while (_send_socket.is_connected()){
+void Connector::_update(){
+    std::cout << "[CONNECTOR] Starting working thread" << std::endl;
+    while (_send_socket.is_connected() && _recv_socket.is_connected()){
         if(_sbuffer.size() == 0)
-            std::cout << "_sbuffer is empty" << std::endl;
+            _recv_message();
         else
             _send_message();
     
@@ -162,7 +141,7 @@ void Connector::_recv_message(){
 
     setsockopt(_recv_socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout_, sizeof(timeout_));
 
-    std::cout << "Recieving message" << std::endl;
+    std::cout << "[CONNECTOR] Recieving message" << std::endl;
     int recv_res_ = recv(_recv_socket, buffer_recv_, sizeof(buffer_recv_), 0);
 
     if(recv_res_ >= 0){
@@ -173,45 +152,42 @@ void Connector::_recv_message(){
         Message msg_ = _decode(str_);
 
         if(msg_.id == 0 && msg_.message == "EOC"){
-            std::cout << "Disconnecting" << std::endl;
+            std::cout << "[CONNECTOR] Disconnecting" << std::endl;
 
             _recv_socket.disconnect();
             _send_socket.disconnect();
             return;
         }
     
-        std::cout << "Adding gotten message to the _rbuffer, message is" << str_ << std::endl;
+        std::cout << "[CONNECTOR] Adding gotten message to the _rbuffer, message is" << str_ << std::endl;
         _rbuffer.push_back(msg_);
     }    
 }
 
 void Connector::_send_message(){
-    std::cout << "Getting _sbuffer.front() and checking" << std::endl;
+    std::cout << "[CONNECTOR] Getting _sbuffer.front() and checking" << std::endl;
     Message msg_ = _sbuffer.front();
+    
     if(msg_.message.length() > LENGTH_OF_MSG){
         _sbuffer.pop_front();
         return;
     }
 
-    std::cout << msg_.message << std::endl;
+    std::cout << "[CONNECTOR] " << msg_.message << std::endl;
 
     std::string str_msg_ = _encode(msg_);
     _sbuffer.pop_front();
 
-    char buffer_send_[BUFFER_SIZE];
-
-    std::cout << "Copying encoded message into buffer" << std::endl;
-    std::strcpy(buffer_send_, str_msg_.c_str());
-
-    std::cout << "Sending message " << str_msg_.length() << ' ' << buffer_send_ << std::endl;
-    send(_send_socket, buffer_send_, str_msg_.length(), 0);
+    std::cout << "[CONNECTOR] Sending message " << str_msg_.length() << ' ' << str_msg_.c_str() << std::endl;
+    send(_send_socket, str_msg_.c_str(), str_msg_.length(), 0);
 }
 
 std::string Connector::_encode(const Connector::Message& msg_){
     if(msg_.message.length() == 0)
         return "";
 
-    std::cout << "Distinguishing symbols" << std::endl;
+#ifdef CODEC
+    std::cout << "[CONNECTOR] Distinguishing symbols" << std::endl;
     std::map<char, std::vector<int>> symbols_;
 
     for (size_t ind_ = 0; ind_ < msg_.message.length(); ind_++){
@@ -224,11 +200,11 @@ std::string Connector::_encode(const Connector::Message& msg_){
     }
 
     std::string res_;
-    std::cout << "Adding ID" << std::endl;
+    std::cout << "[CONNECTOR] Adding ID" << std::endl;
     res_ += ~(msg_.id);
     res_ += END_OF_ID;
 
-    std::cout << "Encoding symbols" << std::endl;
+    std::cout << "[CONNECTOR] Encoding symbols" << std::endl;
     for (const auto& node_ : symbols_){
         res_ += ~(node_.first);
         for (const auto& ind_ : node_.second){
@@ -240,8 +216,12 @@ std::string Connector::_encode(const Connector::Message& msg_){
     }
     
     res_ += ~(msg_.message.length());
+#else
+    std::string res_;
+    res_ = std::to_string(msg_.id) + " " + msg_.message;
+#endif
 
-    std::cout << "Returning encoded message" << std::endl;
+    std::cout << "[CONNECTOR] Returning encoded message" << std::endl;
     return res_;
 }
 
@@ -251,7 +231,8 @@ Connector::Message Connector::_decode(std::string& str_){
         return msg_;
     }
 
-    std::cout << "Getting ID" << std::endl;
+#ifdef CODEC
+    std::cout << "[CONNECTOR] Getting ID" << std::endl;
     uint8_t id_ = ~(str_[0]);
     str_ = str_.substr(2);
 
@@ -266,7 +247,7 @@ Connector::Message Connector::_decode(std::string& str_){
     res_.reserve(length_);
     res_.resize(length_);
     
-    std::cout << "Decoding message" << std::endl;
+    std::cout << "[CONNECTOR] Decoding message" << std::endl;
     while (str_.length() != 1){
         char char_ = ~(str_.front());
         int ind_ = 2;
@@ -283,7 +264,10 @@ Connector::Message Connector::_decode(std::string& str_){
     }
 
     Message msg_ = {id_, res_};
+#else
+    Message msg_ = {static_cast<uint8_t>(str_[0] - 48), str_.substr(2)};
+#endif
     
-    std::cout << "Returning decoded message" << std::endl;
+    std::cout << "[CONNECTOR] Returning decoded message" << std::endl;
     return msg_;
 }
