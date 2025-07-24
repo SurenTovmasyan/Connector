@@ -66,7 +66,10 @@ Connector::Message Connector::get_message(){
     while(res_.id == 0){
         // std::cout << "[CONNECTOR] Checking msg_.id" << std::endl;
         _rbuffer.pop_front();
-        res_ = _rbuffer.front();    
+        if(_rbuffer.size() != 0)
+            res_ = _rbuffer.front(); 
+        else 
+            return res_;
     }
 
     // std::cout << "[CONNECTOR] Deleting and returning msg_" << std::endl;
