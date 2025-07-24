@@ -18,6 +18,8 @@ public:
         CLIENT
     };
 
+    static const int SOCKET_TIMEOUT_US;
+
     explicit Socket(Socket_Type, int, const std::string&, int);
     ~Socket();
 

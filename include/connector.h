@@ -15,9 +15,9 @@
 #include <map>
 #include <vector>
 #include <iostream>
+#include <mutex>
 
-#include "recv_socket.h"
-#include "send_socket.h"
+#include "socket.h"
 
 class Connector
 {
@@ -37,24 +37,26 @@ public:
 
     int available() const noexcept;
 
-    Connector(int, int, int, const std::string&, int);
+    Connector(int, int, Socket::Socket_Type, int, const std::string&, int);
     ~Connector();
     
 private:
+    std::mutex _smtx;
+    std::mutex _rmtx;
+
     std::deque<Message> _rbuffer;
     int _recv_buffer_size;
     std::deque<Message> _sbuffer;
     int _send_buffer_size;
 
-    Recv_Socket _recv_socket;
-    Send_Socket _send_socket;
+    Socket _socket;
 
     Connector(const Connector&) = delete;
     Connector(Connector&&) = delete;
     Connector& operator=(const Connector&) = delete;
     Connector& operator=(Connector&&) = delete;
 
-    std::thread _thr;
+    std::thread _thrd;
     void _update();
 
     void _recv_message();

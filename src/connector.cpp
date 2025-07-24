@@ -10,34 +10,26 @@ constexpr const int END_OF_ID = '>';
 #endif
 
 constexpr const int LENGTH_OF_MSG = 125;
-constexpr const int BUFFER_SIZE = 4096;
+constexpr const int SOCKET_TIMEOUT_CYCLES = 50;
 constexpr const int THREAD_SLEEP_MS = 25;
-constexpr const int SOCKET_TIMEOUT_US = 50 * 1000; // 50ms
-constexpr const int SOCKET_TIMEOUT_CYCLES = 500; // 50 * 100ms = 5s
 
 void Connector::connect(){
     std::cout << "[CONNECTOR] Trying to connect" << std::endl;
 
-    _recv_socket.connect();
-    _send_socket.connect();
+    _socket.connect();
 
     int cycle_counter_ = 0;
-    while((!_recv_socket.is_connected() || !_send_socket.is_connected()) 
-            && cycle_counter_ < SOCKET_TIMEOUT_CYCLES)
-    {
+    while(!_socket.is_connected() && cycle_counter_++ < SOCKET_TIMEOUT_CYCLES)
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        cycle_counter_++;
-    }
 
-    if(!_recv_socket.is_connected() || !_send_socket.is_connected()){
-        _recv_socket.disconnect();
-        _send_socket.disconnect();
+    if(!_socket.is_connected()){
+        _socket.disconnect();
         std::cout << "[CONNECTOR] Timeout worked, couldn't connect" << std::endl;
         return;
     }
 
     std::cout << "[CONNECTOR] Creating working thread" << std::endl;
-    _thr = std::thread([&]() { _update(); });
+    _thrd = std::thread([&]() { _update(); });
 }
 
 void Connector::disconnect(){
@@ -51,11 +43,11 @@ void Connector::disconnect(){
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    _recv_socket.disconnect();
-    _send_socket.disconnect();
+    _socket.disconnect();
 }
 
 bool Connector::set_message(Connector::Message&& msg_) noexcept{
+    std::lock_guard<std::mutex> lock_(_smtx);
     if(_sbuffer.size() == _send_buffer_size)
         return false;
     
@@ -65,6 +57,7 @@ bool Connector::set_message(Connector::Message&& msg_) noexcept{
 }
 
 Connector::Message Connector::get_message(){
+    std::lock_guard<std::mutex> lock_(_rmtx);
     if(_rbuffer.size() == 0)
         return {0, ""};
 
@@ -82,6 +75,7 @@ Connector::Message Connector::get_message(){
 }
 
 Connector::Message Connector::get_message(uint8_t id){
+    std::lock_guard<std::mutex> lock_(_rmtx);
     if(_rbuffer.size() == 0)
         return {0, ""};
 
@@ -108,21 +102,20 @@ Connector::~Connector(){
     disconnect();
 }
 
-Connector::Connector(int recv_buf_size_, int send_buf_size_, 
-        int self_port_, const std::string& other_ip_, int other_port_):
-    _rbuffer(),
-    _recv_buffer_size(recv_buf_size_),
-    _sbuffer(),
-    _send_buffer_size(send_buf_size_),
-    _recv_socket(self_port_),
-    _send_socket(other_ip_, other_port_)
+Connector::Connector(int recv_buf_size_, int send_buf_size_, Socket::Socket_Type type_, \
+        int self_port_, const std::string& other_ip_, int other_port_)
+    : _rbuffer()
+    , _recv_buffer_size(recv_buf_size_)
+    , _sbuffer()
+    , _send_buffer_size(send_buf_size_)
+    , _socket(type_, self_port_, other_ip_, other_port_)
 {    
     connect();
 }
 
 void Connector::_update(){
     std::cout << "[CONNECTOR] Starting working thread" << std::endl;
-    while (_send_socket.is_connected() && _recv_socket.is_connected()){
+    while (_socket.is_connected()){
         if(_sbuffer.size() == 0)
             _recv_message();
         else
@@ -133,16 +126,16 @@ void Connector::_update(){
 }
 
 void Connector::_recv_message(){
-    char buffer_recv_[BUFFER_SIZE] = {0};
+    char buffer_recv_[LENGTH_OF_MSG] = {0};
 
     timeval timeout_;
     timeout_.tv_sec = 0;  
-    timeout_.tv_usec = SOCKET_TIMEOUT_US;
+    timeout_.tv_usec = Socket::SOCKET_TIMEOUT_US;
 
-    setsockopt(_recv_socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout_, sizeof(timeout_));
+    setsockopt(_socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout_, sizeof(timeout_));
 
     // std::cout << "[CONNECTOR] Recieving message" << std::endl;
-    int recv_res_ = recv(_recv_socket, buffer_recv_, sizeof(buffer_recv_), 0);
+    int recv_res_ = recv(_socket, buffer_recv_, sizeof(buffer_recv_), 0);
 
     if(recv_res_ >= 0){
         std::string str_ = buffer_recv_;
@@ -152,34 +145,36 @@ void Connector::_recv_message(){
         Message msg_ = _decode(str_);
 
         if(msg_.id == 0 && msg_.message == "EOC"){
-            std::cout << "[CONNECTOR] Disconnecting" << std::endl;
-
-            _recv_socket.disconnect();
-            _send_socket.disconnect();
+            disconnect();
             return;
         }
     
         // std::cout << "[CONNECTOR] Adding gotten message to the _rbuffer, message is " << str_ << std::endl;
+        std::lock_guard<std::mutex> lock_(_rmtx);
         _rbuffer.push_back(msg_);
     }    
 }
 
 void Connector::_send_message(){
+    std::string str_msg_ ;
     // std::cout << "[CONNECTOR] Getting _sbuffer.front() and checking" << std::endl;
-    Message msg_ = _sbuffer.front();
-    
-    if(msg_.message.length() > LENGTH_OF_MSG){
+    {
+        std::lock_guard<std::mutex> lock_(_smtx);
+        Message msg_ = _sbuffer.front();
+        
+        if(msg_.message.length() > LENGTH_OF_MSG){
+            _sbuffer.pop_front();
+            return;
+        }
+
+        // std::cout << "[CONNECTOR] " << msg_.message << std::endl;
+
+        str_msg_ = _encode(msg_);
         _sbuffer.pop_front();
-        return;
     }
 
-    // std::cout << "[CONNECTOR] " << msg_.message << std::endl;
-
-    std::string str_msg_ = _encode(msg_);
-    _sbuffer.pop_front();
-
     // std::cout << "[CONNECTOR] Sending message " << str_msg_.length() << ' ' << str_msg_.c_str() << std::endl;
-    send(_send_socket, str_msg_.c_str(), str_msg_.length(), 0);
+    send(_socket, str_msg_.c_str(), str_msg_.length(), 0);
 }
 
 std::string Connector::_encode(const Connector::Message& msg_){

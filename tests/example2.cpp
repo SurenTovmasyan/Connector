@@ -2,10 +2,10 @@
 #include "../include/connector.h"
 
 int main(){
-    Connector c(10,10,15973,"192.168.2.19",15973);
+    Connector c(10, 10, Socket::SERVER, 15974, "192.168.2.19", 15973);
 
     std::cout << "sleep1" << std::endl;
-    std::this_thread::sleep_for(std::chrono::milliseconds(7000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
     Connector::Message msg = c.get_message();
     std::cout << "HALLO   " << msg.id << ' ' << msg.message << std::endl;
@@ -21,7 +21,7 @@ int main(){
     }
     
     std::cout << "sleep3" << std::endl;
-    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 
     return 0;
 }
