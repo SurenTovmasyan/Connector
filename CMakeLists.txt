@@ -17,8 +17,8 @@ target_link_libraries(connector
         spdlog::spdlog
 )
 
-add_executable(exm1 tests/example1.cpp)
-target_link_libraries(exm1 PRIVATE connector)
+# add_executable(exm1 tests/example1.cpp)
+# target_link_libraries(exm1 PRIVATE connector)
 
-add_executable(exm2 tests/example2.cpp)
-target_link_libraries(exm2 PRIVATE connector)
+# add_executable(exm2 tests/example2.cpp)
+# target_link_libraries(exm2 PRIVATE connector)
