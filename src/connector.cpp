@@ -25,7 +25,7 @@ void Connector::connect(){
     if(!_socket.is_connected()){
         _socket.disconnect();
         std::cout << "[CONNECTOR] Timeout worked, couldn't connect" << std::endl;
-        return;
+        std::exit(-1);
     }
 
     std::cout << "[CONNECTOR] Creating working thread" << std::endl;
